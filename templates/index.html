@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}MedClear Demo Home{% endblock %}
+
+{% block content %}
+<section class="hero-card">
+    <div class="eyebrow">IIT Hackathon Demo</div>
+    <h1>AI agent workflow for student vaccine document review</h1>
+    <p class="hero-copy">
+        This local demo wraps the existing MedClear audit scripts in a simple web flow:
+        upload an initial immunization PDF, review the audit output, then upload a supplementary
+        receipt and view the final reconciliation result.
+    </p>
+    <div class="hero-notes">
+        <div class="note-pill">No real login</div>
+        <div class="note-pill">Case identity = Record number</div>
+        <div class="note-pill">PDF redaction is not part of this demo</div>
+        <div class="note-pill">Sample JSON fallback is enabled on failure</div>
+    </div>
+</section>
+
+<section class="grid-two">
+    <article class="panel">
+        <h2>Start a new case</h2>
+        <p>Create the next available record number and go straight to the upload page.</p>
+        <form action="{{ url_for('new_case') }}" method="post">
+            <button type="submit" class="button button-primary">Create New Case</button>
+        </form>
+    </article>
+
+    <article class="panel">
+        <h2>Continue an existing case</h2>
+        <p>Open a record number that already exists in the local demo workspace.</p>
+        <form action="{{ url_for('open_case') }}" method="post" class="stack-form">
+            <label for="record_id">Record number</label>
+            <input id="record_id" name="record_id" type="number" min="1" placeholder="Example: 4" required>
+            <button type="submit" class="button">Open Case</button>
+        </form>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <h2>Known cases in this workspace</h2>
+        <p>These cases are detected from uploaded files, existing results, or the local registry.</p>
+    </div>
+
+    {% if cases %}
+        <div class="case-grid">
+            {% for case in cases %}
+                <article class="case-card">
+                    <div class="case-top">
+                        <span class="case-id">Record{{ case.record_id }}</span>
+                        <span class="status-chip">{{ case.status_label }}</span>
+                    </div>
+                    <div class="case-meta">
+                        <span>Age: {{ case.age if case.age else "Not set" }}</span>
+                        <span>Initial result: {{ "Yes" if case.has_initial_result else "No" }}</span>
+                        <span>Final result: {{ "Yes" if case.has_final_result else "No" }}</span>
+                    </div>
+                    <a class="text-link" href="{{ url_for('view_case', record_id=case.record_id) }}">Open case</a>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="empty-state">No cases have been created or discovered yet.</p>
+    {% endif %}
+</section>
+{% endblock %}

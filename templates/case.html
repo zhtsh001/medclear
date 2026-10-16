@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Record{{ case.record_id }} | MedClear Demo{% endblock %}
+
+{% block content %}
+<section class="panel case-header">
+    <div>
+        <div class="eyebrow">Student Case</div>
+        <h1>Record{{ case.record_id }}</h1>
+        <p class="hero-copy">
+            This case page tracks one student's document set across the initial audit and the final
+            reconciliation review.
+        </p>
+    </div>
+    <div class="case-status-box">
+        <span class="status-chip status-large">{{ case.status_label }}</span>
+        <span class="meta-line">Age: {{ case.age if case.age else "Not set" }}</span>
+    </div>
+</section>
+
+<section class="grid-two">
+    <article class="panel">
+        <h2>Step 1. Upload initial immunization record</h2>
+        <form action="{{ url_for('upload_initial', record_id=case.record_id) }}" method="post" enctype="multipart/form-data" class="stack-form">
+            <label for="student_age_initial">Student age</label>
+            <input
+                id="student_age_initial"
+                name="student_age"
+                type="number"
+                min="1"
+                max="120"
+                value="{{ case.age if case.age else '' }}"
+                required
+            >
+
+            <label for="initial_pdf">Initial PDF</label>
+            <input id="initial_pdf" name="initial_pdf" type="file" accept="application/pdf" required>
+
+            <button type="submit" class="button button-primary">Run Initial Audit</button>
+        </form>
+
+        <div class="detail-list">
+            <div><strong>Stored file:</strong> {{ case.initial_pdf_path if case.initial_pdf_path else "Not uploaded yet" }}</div>
+            <div><strong>Result source:</strong> {{ case.initial_result_source if case.initial_result_source else "Not run yet" }}</div>
+            {% if case.initial_error %}
+                <div><strong>Fallback reason:</strong> {{ case.initial_error }}</div>
+            {% endif %}
+        </div>
+    </article>
+
+    <article class="panel">
+        <h2>Step 2. Upload supplementary vaccination receipt</h2>
+        <form action="{{ url_for('upload_supplement', record_id=case.record_id) }}" method="post" enctype="multipart/form-data" class="stack-form">
+            <label for="student_age_final">Student age</label>
+            <input
+                id="student_age_final"
+                name="student_age"
+                type="number"
+                min="1"
+                max="120"
+                value="{{ case.age if case.age else '' }}"
+                required
+            >
+
+            <label for="supplement_pdf">Supplementary PDF</label>
+            <input id="supplement_pdf" name="supplement_pdf" type="file" accept="application/pdf" required>
+
+            <button type="submit" class="button">Run Final Audit</button>
+        </form>
+
+        <div class="detail-list">
+            <div><strong>Stored file:</strong> {{ case.supplement_pdf_path if case.supplement_pdf_path else "Not uploaded yet" }}</div>
+            <div><strong>Result source:</strong> {{ case.final_result_source if case.final_result_source else "Not run yet" }}</div>
+            {% if case.final_error %}
+                <div><strong>Fallback reason:</strong> {{ case.final_error }}</div>
+            {% endif %}
+        </div>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <h2>Initial audit result</h2>
+        <p>Directly rendered from the existing initial audit JSON structure.</p>
+    </div>
+
+    {% if initial_result %}
+        <div class="summary-grid">
+            <div class="summary-card">
+                <span class="summary-label">Compliance</span>
+                <strong class="{{ 'status-good' if initial_result.is_compliant else 'status-bad' }}">
+                    {{ "Compliant" if initial_result.is_compliant else "Non-compliant" }}
+                </strong>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Confidence</span>
+                <strong>{{ initial_result.confidence_score }}</strong>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Intake Semester</span>
+                <strong>{{ initial_result.inferred_intake_semester or "Unknown" }}</strong>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Authenticity</span>
+                <strong>{{ "Reviewed" if initial_result.authenticity_check else "N/A" }}</strong>
+            </div>
+        </div>
+
+        <div class="detail-list">
+            <div><strong>Authenticity detail:</strong> {{ initial_result.authenticity_check }}</div>
+        </div>
+
+        <h3>Extracted vaccinations</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Vaccine</th>
+                        <th>Date</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in initial_result.extracted_vaccinations or [] %}
+                        <tr>
+                            <td>{{ item.vaccine }}</td>
+                            <td>{{ item.date or "-" }}</td>
+                            <td>{{ item.result or "-" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Issues and next action</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Vaccine</th>
+                        <th>Reason</th>
+                        <th>Recommended remedy</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if initial_result.issues %}
+                        {% for issue in initial_result.issues %}
+                            <tr>
+                                <td>{{ issue.vaccine }}</td>
+                                <td>{{ issue.reason }}</td>
+                                <td>{{ issue.remedy }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="3">No outstanding issues.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty-state">No initial audit result yet. Upload an initial PDF to start the review.</p>
+    {% endif %}
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <h2>Final reconciliation result</h2>
+        <p>Directly rendered from the existing re-audit JSON structure.</p>
+    </div>
+
+    {% if final_result %}
+        <div class="summary-grid">
+            <div class="summary-card">
+                <span class="summary-label">Compliance</span>
+                <strong class="{{ 'status-good' if final_result.is_compliant else 'status-bad' }}">
+                    {{ "Compliant" if final_result.is_compliant else "Non-compliant" }}
+                </strong>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Confidence</span>
+                <strong>{{ final_result.confidence_score }}</strong>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Intake Semester</span>
+                <strong>{{ final_result.inferred_intake_semester or "Unknown" }}</strong>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Authenticity</span>
+                <strong>{{ "Reviewed" if final_result.authenticity_check else "N/A" }}</strong>
+            </div>
+        </div>
+
+        <div class="detail-list">
+            <div><strong>Authenticity detail:</strong> {{ final_result.authenticity_check }}</div>
+        </div>
+
+        <h3>Merged dose timeline</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Vaccine</th>
+                        <th>Date</th>
+                        <th>Source document</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in final_result.all_doses_extracted or [] %}
+                        <tr>
+                            <td>{{ item.vaccine }}</td>
+                            <td>{{ item.date or "-" }}</td>
+                            <td>{{ item.source_doc or "-" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Remaining issues</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Vaccine</th>
+                        <th>Reason</th>
+                        <th>Recommended remedy</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if final_result.issues %}
+                        {% for issue in final_result.issues %}
+                            <tr>
+                                <td>{{ issue.vaccine }}</td>
+                                <td>{{ issue.reason }}</td>
+                                <td>{{ issue.remedy }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="3">No outstanding issues.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty-state">No final audit result yet. Upload a supplementary PDF after the initial review.</p>
+    {% endif %}
+</section>
+{% endblock %}
