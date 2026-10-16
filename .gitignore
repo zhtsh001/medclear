@@ -1,0 +1,16 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+*.pdf
+*.PDF
+*.eml
+*.log
+Immunization_Records/
+data/
+*_Result.json
+*_Final_Audit.json
+.vscode/

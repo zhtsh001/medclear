@@ -1,0 +1,30 @@
+{
+    "university_policy": [
+        {
+            "vaccine_name": "DTaP, TD, or Tdap",
+            "validity_period": "within the past 10 years",
+            "required_doses": 3,
+            "intervals": "1-6 months intervals",
+            "target_audience": "All Students"
+        },
+        {
+            "target_audience": "All Students",
+            "age_or_date_constraints": "after age 1; born after 1957",
+            "required_doses": 2,
+            "intervals": "1-month intervals (at least 28 days apart)",
+            "vaccine_name": "MMR (Measles, Mumps, Rubella)"
+        },
+        {
+            "age_or_date_constraints": "on or after 16 years of age (for students under 22)",
+            "vaccine_name": "Meningococcal",
+            "target_audience": "All Students",
+            "required_doses": 1
+        },
+        {
+            "required_doses": 1,
+            "target_audience": "International Students",
+            "vaccine_name": "TB Blood Test (QuantiFERON or T-SPOT)",
+            "age_or_date_constraints": "after July 21"
+        }
+    ]
+}
